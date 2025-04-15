@@ -1,9 +1,10 @@
+# Workflow para desplegar contenido estático en GitHub Pages
 name: Deploy Crypto-QR.github.io
 
 on:
   push:
-    branches: ["main"]
-  workflow_dispatch:
+    branches: ["main"]  # Se ejecuta cuando haces push a la rama main
+  workflow_dispatch:     # Permite ejecutarlo manualmente desde Actions
 
 permissions:
   contents: read
@@ -20,30 +21,19 @@ jobs:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
+
     steps:
-      - name: Checkout repository
+      - name: Checkout código
         uses: actions/checkout@v4
 
-      - name: Setup Pages
+      - name: Configurar GitHub Pages
         uses: actions/configure-pages@v5
-        with:
-          # Especificamos que usaremos una carpeta personalizada
-          static_site_generator: "custom"
-          
-      - name: Upload artifact from encryption project
+
+      - name: Subir archivos de la carpeta ruleta
         uses: actions/upload-pages-artifact@v3
         with:
-          # Ruta a tu carpeta con el proyecto
-          path: './proyecto encrip'  # Nombre exacto de la carpeta con espacio
-          
-          # Configuración adicional para SPA
-          retention-days: 1
-          exclude_assets: |
-            *.md
-            .gitignore
-            LICENSE
-            .github
+          path: 'Proyecto encrip'  # ¡Aquí cambiamos de '.' a 'ruleta'!
 
-      - name: Deploy to GitHub Pages
+      - name: Desplegar en GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
