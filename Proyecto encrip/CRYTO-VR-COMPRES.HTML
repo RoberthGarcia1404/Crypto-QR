@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<title>Crypto-QR</title>
+<meta charset=UTF-8>
+<script src=//cdn.jsdelivr.net/npm/lz-string@1.4.4/libs/lz-string.min.js></script>
+<style>
+    body {
+        font-family: system-ui;
+        background: #000;
+        color#ccc;
+        margin: 20px auto;
+        max-width: 850px
+    }
+
+    .c {
+        background: #2a2a2a;
+        padding: 20px;
+        border-radius: 12px;
+        box-shadow: 0 5px 20px #000
+    }
+
+    textarea,
+    input {
+        width: 100%;
+        padding: 10px;
+        margin: 8px 0;
+        background: #333;
+        border: 1px solid #555;
+        color#fff;
+        border-radius: 6px
+    }
+
+    .b {
+        background: #4C5;
+        color#fff;
+        padding: 8px 16px;
+        border: 0;
+        border-radius: 6px;
+        cursor: pointer
+    }
+
+    #q {
+        background: rgba(0, 0, 0, .7);
+        padding: 20px;
+        border-radius: 8px
+    }
+
+    #n {
+        image-rendering: pixelated
+    }
+</style>
+<div class=c>
+    <h1>🔐 Crypto-QR</h1><textarea id=i rows=5 placeholder=Mensaje></textarea><input id=k placeholder=Clave>
+    <div class=b><button onclick=E()>🔒</button><button onclick=D()>🔓</button><button onclick=M()>🖼️</button><button
+            onclick=G()>📷</button></div><input type=file id=f hidden>
+    <div id=q></div><canvas id=n></canvas><textarea id=o rows=5 readonly></textarea>
+</div>
+<script>let Q, N; const C = 1200; function E() { let e = document.getElementById('i').value, t = document.getElementById('k').value; try { let r = LZString.compressToUint8Array(e), n = new Uint8Array(16); crypto.getRandomValues(n); let o = new TextEncoder().encode(t), l = new Uint8Array(r.length); for (let e = 0; e < r.length; e++)l[e] = r[e] ^ ((o[e % o.length] + n[e % n.length] + e % 256) & 255); let d = new Uint8Array([...n, ...l]), u = d.reduce((e, t) => (e + t) & 255, 0), h = []; d.forEach(e => { h.push(e), h.push(33 + 94 * Math.random() | 0) }), h.push(u); let f = btoa(String.fromCharCode(...h)).replace(/\+/g, '-').replace(/_/g, '/').replace(/=/g, ''); document.getElementById('o').value = f; new QRCode(q, { text: f, width: 196, height: 196, colorDark: "#000" }); let c = document.getElementById('n'), a = new TextEncoder().encode(f).length, s = Math.ceil(Math.sqrt(a + 4)); c.width = s, c.height = s; let i = c.getContext('2d').createImageData(s, s); i.data.forEach((e, t) => i.data[t] = t % 4 < 3 ? 255 * Math.random() | 0 : 255); new TextEncoder().encode(f).forEach((e, t) => i.data[4 * (t + 4) + 2] = e), c.getContext('2d').putImageData(i, 0), N = c.toDataURL() } catch (e) { alert(e) } } function D() { let e = document.getElementById('o').value, t = document.getElementById('k').value; try { let r = atob(e.replace(/-/g, '+').replace(/_/g, '/')), n = [...r].map(e => e.charCodeAt(0)), o = n.slice(0, -1).filter((e, t) => t % 2 == 0), l = o.slice(16), d = o.slice(0, 16), u = new TextEncoder().encode(t), h = []; l.forEach((e, t) => h.push(e ^ ((u[t % u.length] + d[t % d.length] + t % 256) & 255))); document.getElementById('o').value = LZString.decompressFromUint8Array(new Uint8Array(h)) } catch (e) { alert(e) } } function G() { q.querySelector('canvas')?.toBlob(e => { let t = document.createElement('a'); t.download = 'qr.png', t.href = URL.createObjectURL(e), t.click() }) } function M() { (f = document.getElementById('f')).click(f.onchange = e => { let t = new FileReader; t.onload = e => { let r = new Image; r.onload = () => { let e = document.createElement('canvas'), t = e.getContext('2d'); e.width = r.width, e.height = r.height, t.drawImage(r, 0, 0); let n = t.getImageData(0, 0, e.width, e.height).data, o = []; for (let e = 0; e < (n[2] << 24 | n[6] << 16 | n[10] << 8 | n[14]); e++)o.push(n[4 * (e + 4) + 2]); D(document.getElementById('o').value = String.fromCharCode(...o)) }, r.src = e.target.result }, t.readAsDataURL(e.target.files[0]) }) }</script>
