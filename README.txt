@@ -46,8 +46,8 @@ Base64 → Decodificación → Filtrado → XOR → Descompresión → Texto
 Función	            Full (23KB) 	Lite (10KB)	Texto (5KB)
 Encriptación texto	✓	               ✓	         ✓
 Generación QR	        ✓	               ✓         	✗
-Imagen de ruido	        ✓	                 ✗         	✗
-Desencriptar imagen	✓	               ✗	✗
+Imagen de ruido	        ✓	               ✗         	✗
+Desencriptar imagen	✓	               ✗	      ✗
 
 
 5. USO OFFLINE
