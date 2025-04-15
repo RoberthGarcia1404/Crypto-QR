@@ -1,5 +1,5 @@
 # Workflow para desplegar contenido estático en GitHub Pages
-name: Deploy Crypto-QR.github.io
+name: Deploy Crypto-QR
 
 on:
   push:
