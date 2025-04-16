@@ -89,6 +89,13 @@
         .download-btn:hover {
              background: #0056b3;
         }
+
+        .button-bsc {
+             background: #ee7f00;
+        }
+        .button-bsc:hover {
+             background: #d47f00;
+        }
         #qrcode {
             margin: 25px auto;
             text-align: center;
@@ -155,8 +162,8 @@
         <div class="button-group">
             <button onclick="encrypt()"><i class="fas fa-lock"></i> Encriptar y Generar</button>
             <button onclick="decrypt()"><i class="fas fa-lock-open"></i> Desencriptar Texto</button>
-            <button class="download-btn" onclick="decryptFromImage()"><i class="fas fa-image"></i> Desencriptar desde Imagen Ruido</button>
-            <button class="download-btn" onclick="decryptFromQRImage()"><i class="fas fa-camera"></i> Desencriptar desde Imagen QR</button>
+            <button class="button-bsc" onclick="decryptFromImage()"><i class="fas fa-image"></i> Desencriptar desde Imagen Ruido</button>
+            <button class="button-bsc" onclick="decryptFromQRImage()"><i class="fas fa-camera"></i> Desencriptar desde Imagen QR</button>
             <button class="download-btn" onclick="downloadQR()"><i class="fas fa-qrcode"></i> Descargar QR</button>
             <button class="download-btn" onclick="downloadNoiseImage()"><i class="fas fa-download"></i> Descargar Imagen Ruido</button>
         </div>
