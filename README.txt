@@ -1,7 +1,6 @@
 DOCUMENTACIÓN TÉCNICA CRYPTO-QR
 Versión: 2.3
-Fecha: [Fecha Actual]
-
+Fecha: 15/04/2025
 
 1. DESCRIPCIÓN GENERAL
 Sistema de encriptación cliente-side que combina:
