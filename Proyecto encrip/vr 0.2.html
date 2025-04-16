@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Crypto-QR</title>
+    <meta charset="UTF-8">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/lz-string@1.4.4/libs/lz-string.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <style>
+        /* --- Tus estilos (sin cambios) --- */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(to bottom right, #212a34, #000000);
+            color: #e0e0e0;
+            max-width: 850px;
+            margin: 20px auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        .container {
+            background: rgba(42, 42, 42, 0.9);
+            padding: 25px 30px;
+            border-radius: 12px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.5);
+            border: 1px solid #444;
+        }
+        h1 {
+            text-align: center;
+            color: #4CAF50;
+            margin-bottom: 25px;
+            font-weight: 300;
+        }
+        textarea, input[type="text"] {
+            width: 100%;
+            padding: 12px 15px;
+            margin: 10px 0;
+            background: #333;
+            border: 1px solid #555;
+            color: #fff;
+            border-radius: 6px;
+            box-sizing: border-box;
+            font-size: 1rem;
+            transition: border-color 0.3s, box-shadow 0.3s;
+        }
+        textarea:focus, input[type="text"]:focus {
+            outline: none;
+            border-color: #4CAF50;
+            box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.3);
+        }
+        textarea#output {
+            background-color: #1a1a1a;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 0.9rem;
+            word-wrap: break-word;
+        }
+        .button-group {
+            margin: 20px 0;
+            text-align: center;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: center;
+        }
+        button {
+            background: #4CAF50;
+            color: white;
+            padding: 10px 18px;
+            margin: 0;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background 0.3s, transform 0.1s;
+            font-size: 0.95rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        button:hover {
+            background: #45a049;
+            transform: translateY(-1px);
+        }
+        button:active {
+             transform: translateY(0px);
+        }
+        .download-btn {
+             background: #007bff;
+        }
+        .download-btn:hover {
+             background: #0056b3;
+        }
+        #qrcode {
+            margin: 25px auto;
+            text-align: center;
+            background: rgba(0, 0, 0, 0.716);
+            padding: 50px; /* Aumentado el padding */
+            display: inline-block;
+            border-radius: 8px;
+            min-height: 50px;
+            line-height: normal;
+            vertical-align: top;
+            box-shadow: 0 0px 0px rgba(0,0,0,0.2);
+        }
+         #qrcode canvas, #qrcode img {
+             display: block;
+             margin: 0 auto;
+             background: white; /* Asegurar fondo blanco para QR generado */
+             padding: 10px; /* Padding interno para el QR */
+             border-radius: 5px;
+        }
+        .image-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 25px;
+            justify-content: center;
+            align-items: flex-start;
+            margin: 25px 0;
+            min-height: 200px; /* Reducido para ejemplo */
+        }
+        #noiseCanvas {
+            border: 10px solid #000000;
+            background: rgba(0, 0, 0, 0.716);
+            image-rendering: pixelated;
+            border-radius: 8px;
+            display: block;
+            max-width: 100%;
+            height: auto;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+             /* Canvas inicialmente sin tamaño visible */
+             width: 500px;
+             height: 200px;
+             border: none;
+        }
+         #noiseCanvas[width]:not([width="0"]) {
+             /* Se aplica borde en JS cuando se genera */
+             border: 3px solid #4CAF50;
+         }
+        .hidden { display: none; }
+        .qr-message {
+             color: #6d6d6dcd;
+             font-style: italic;
+             padding: 10px;
+             background: white; /* Para que sea legible si reemplaza al QR */
+             border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1><i class="fas fa-shield-alt"></i> Crypto-QR Generator Avanzado</h1>
+
+        <textarea id="input" rows="5" placeholder="Escribe tu mensaje secreto aquí..."></textarea>
+        <input type="text" id="key" placeholder="Tu palabra clave secreta">
+
+        <div class="button-group">
+            <button onclick="encrypt()"><i class="fas fa-lock"></i> Encriptar y Generar</button>
+            <button onclick="decrypt()"><i class="fas fa-lock-open"></i> Desencriptar Texto</button>
+            <button class="download-btn" onclick="decryptFromImage()"><i class="fas fa-image"></i> Desencriptar desde Imagen Ruido</button>
+            <button class="download-btn" onclick="decryptFromQRImage()"><i class="fas fa-camera"></i> Desencriptar desde Imagen QR</button>
+            <button class="download-btn" onclick="downloadQR()"><i class="fas fa-qrcode"></i> Descargar QR</button>
+            <button class="download-btn" onclick="downloadNoiseImage()"><i class="fas fa-download"></i> Descargar Imagen Ruido</button>
+        </div>
+
+         <input type="file" id="imageInput" accept="image/png" class="hidden">
+         <input type="file" id="qrImageInput" accept="image/*" class="hidden">
+
+        <div class="image-container">
+            <div id="qrcode"></div>
+            <canvas id="noiseCanvas"></canvas>
+        </div>
+
+        <textarea id="output" rows="5" readonly placeholder="Aquí aparecerá el texto encriptado o desencriptado..."></textarea>
+    </div>
+
+    <script>
+        // --- Constantes Configurables (sin cambios) ---
+        const MAX_QR_DATA_LENGTH = 1200;
+        const MAX_CANVAS_SIDE = 4096;
+        // -------------------------------
+
+        let qrCodeInstance = null;
+        let generatedNoiseImageDataUrl = null;
+
+        // --- Funciones Crypto/Compresión (sin cambios) ---
+        function compressEncrypt(text, key) {
+            const compressed = LZString.compressToUint8Array(text);
+            if (!compressed || compressed.length === 0 && text.length > 0) throw new Error("Error en la compresión.");
+            const salt = new Uint8Array(16); crypto.getRandomValues(salt);
+            const keyBytes = new TextEncoder().encode(key);
+            const encrypted = new Uint8Array(compressed.length);
+            for (let i = 0; i < compressed.length; i++) {
+                const derivedByte = (keyBytes[i % keyBytes.length] + salt[i % salt.length] + (i % 256)) & 0xFF;
+                encrypted[i] = compressed[i] ^ derivedByte;
+            }
+            const finalData = new Uint8Array(salt.length + encrypted.length);
+            finalData.set(salt, 0); finalData.set(encrypted, salt.length);
+            const checksum = finalData.reduce((acc, byte) => (acc + byte) & 0xFF, 0);
+            const obfuscated = [];
+            for (const byte of finalData) {
+                obfuscated.push(byte); obfuscated.push(Math.floor(Math.random() * 94) + 33);
+            }
+            obfuscated.push(checksum);
+            const obfArray = new Uint8Array(obfuscated);
+            let binaryString = ""; obfArray.forEach(b => { binaryString += String.fromCharCode(b); });
+            const base64 = btoa(binaryString);
+            const urlSafeBase64 = base64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
+            return urlSafeBase64;
+        }
+        function compressDecrypt(encryptedUrlSafeBase64, key) {
+            try {
+                let base64 = encryptedUrlSafeBase64.replace(/-/g, '+').replace(/_/g, '/');
+                while (base64.length % 4 !== 0) base64 += '=';
+                const binaryString = atob(base64);
+                const allBytes = new Uint8Array(binaryString.length);
+                for (let i = 0; i < binaryString.length; i++) allBytes[i] = binaryString.charCodeAt(i);
+                const dataLength = allBytes.length - 1; const filtered = [];
+                for (let i = 0; i < dataLength; i += 2) filtered.push(allBytes[i]);
+                const extractedChecksum = allBytes[allBytes.length - 1];
+                const computedChecksum = filtered.reduce((acc, byte) => (acc + byte) & 0xFF, 0);
+                if (extractedChecksum !== computedChecksum) throw new Error("Checksum inválido. Datos corruptos o clave incorrecta.");
+                const filteredBytes = new Uint8Array(filtered);
+                if (filteredBytes.length < 16) {
+                     // Manejar caso de mensaje original vacío que solo tendría salt+checksum ofuscado
+                     if (filteredBytes.length === 16 && encryptedUrlSafeBase64.length > 0) {
+                         // Podría ser un mensaje vacío, intentar devolver ""
+                         // (La validación de checksum ya pasó)
+                         console.log("Datos filtrados solo contienen el salt, asumiendo mensaje original vacío.");
+                         return "";
+                     } else {
+                         throw new Error("Datos insuficientes para extraer salt.");
+                     }
+                }
+                const salt = filteredBytes.slice(0, 16);
+                const encryptedData = filteredBytes.slice(16);
+                const keyBytes = new TextEncoder().encode(key);
+                const derived = new Uint8Array(encryptedData.length);
+                for (let i = 0; i < encryptedData.length; i++) {
+                    derived[i] = (keyBytes[i % keyBytes.length] + salt[i % salt.length] + (i % 256)) & 0xFF;
+                }
+                const decryptedCompressed = new Uint8Array(encryptedData.length);
+                for (let i = 0; i < encryptedData.length; i++) {
+                    decryptedCompressed[i] = encryptedData[i] ^ derived[i];
+                }
+                const decompressed = LZString.decompressFromUint8Array(decryptedCompressed);
+                if (decompressed === null) throw new Error("Fallo en la descompresión. Clave incorrecta o datos corruptos.");
+                return decompressed;
+            } catch (err) {
+                console.error("Error detallado en compressDecrypt:", err);
+                if (err.message.includes("atob")) return "Error: El formato del texto encriptado es inválido.";
+                 // Añadir más detalle para errores comunes
+                 if (err.message.includes("salt") || err.message.includes("Checksum")) {
+                     return "Error: " + err.message + " (Verifique la clave o el archivo).";
+                 }
+                 return "Error: " + err.message;
+            }
+        }
+
+        // --- Funciones QR y Ruido (sin cambios) ---
+        function generateQR(text) {
+            const qrContainer = document.getElementById('qrcode');
+            qrContainer.innerHTML = '';
+             // Resetear estilos por si había mensaje de error
+             qrContainer.style.backgroundColor = 'rgba(0, 0, 0, 0.716)';
+             qrContainer.style.padding = '50px';
+
+            if (text.length > MAX_QR_DATA_LENGTH) {
+                qrContainer.innerHTML = `<div class="qr-message">Mensaje demasiado largo (${text.length} bytes) para QR.</div>`;
+                qrContainer.style.backgroundColor = 'white'; // Fondo blanco para mensaje
+                qrContainer.style.padding = '15px';
+                qrCodeInstance = null; return;
+            }
+            if (text.length === 0 && input.value !== "") { // Si el texto original no era vacío pero el encriptado sí
+                 qrContainer.innerHTML = `<div class="qr-message">Error: texto encriptado vacío.</div>`;
+                 qrContainer.style.backgroundColor = 'white';
+                 qrContainer.style.padding = '15px';
+                 qrCodeInstance = null; return;
+            }
+             if (input.value === "" && text.length > 0) { // Si el texto original era vacío
+                 qrContainer.innerHTML = `<div class="qr-message">Generando QR para mensaje vacío...</div>`;
+                 // Continuar para generar QR de la representación del mensaje vacío encriptado
+             }
+             if (text.length === 0 && input.value === "") { // Doble check para evitar QR vacío
+                 qrContainer.innerHTML = `<div class="qr-message">No hay datos para generar QR.</div>`;
+                 qrContainer.style.backgroundColor = 'white';
+                 qrContainer.style.padding = '15px';
+                  qrCodeInstance = null; return;
+             }
+
+
+            try {
+                qrCodeInstance = new QRCode(qrContainer, {
+                    text: text, width: 256, height: 256, colorDark: "#000000",
+                    colorLight: "#ffffff", correctLevel: QRCode.CorrectLevel.H
+                });
+                 // Asegurar que el contenedor tenga fondo blanco y padding correcto para el QR generado
+                 qrContainer.style.backgroundColor = 'white';
+                 qrContainer.style.padding = '15px'; // Padding alrededor del QR
+                 qrContainer.style.display = 'inline-block';
+                  // Acceder al canvas/img generado por qrcode.js y aplicar estilos si es necesario
+                  const qrElement = qrContainer.querySelector('canvas') || qrContainer.querySelector('img');
+                  if (qrElement) {
+                      qrElement.style.background = 'white';
+                      qrElement.style.padding = '10px'; // Padding interno
+                      qrElement.style.borderRadius = '5px';
+                  }
+
+            } catch (error) {
+                 console.error("Error al generar QR:", error);
+                 qrContainer.innerHTML = `<div class="qr-message">Error al generar QR.</div>`;
+                 qrContainer.style.backgroundColor = 'white';
+                 qrContainer.style.padding = '15px';
+                 qrCodeInstance = null;
+            }
+        }
+        function downloadQR() {
+            const qrContainer = document.getElementById('qrcode');
+            const qrCanvas = qrContainer.querySelector('canvas'); const qrImage = qrContainer.querySelector('img');
+            let sourceElement = qrCanvas ? qrCanvas : qrImage;
+            if (sourceElement) {
+                const link = document.createElement('a'); link.download = 'crypto_qr.png';
+                link.href = (sourceElement.tagName === 'CANVAS') ? sourceElement.toDataURL('image/png') : sourceElement.src;
+                link.click();
+            } else {
+                 if(qrContainer.querySelector('.qr-message')) alert("No se generó un código QR.");
+                 else alert("No se encontró el código QR para descargar.");
+            }
+        }
+        function generateNoiseImage(encryptedText, canvasWidth, canvasHeight) {
+            const canvas = document.getElementById('noiseCanvas');
+            canvas.width = canvasWidth; canvas.height = canvasHeight;
+            canvas.style.border = '3px solid #4CAF50'; // Mostrar borde
+            const ctx = canvas.getContext('2d', { willReadFrequently: true });
+            const imageData = ctx.createImageData(canvas.width, canvas.height);
+            const data = imageData.data;
+            for (let i = 0; i < data.length; i += 4) {
+                data[i] = Math.floor(Math.random() * 256); data[i + 1] = Math.floor(Math.random() * 256); data[i+2] = Math.floor(Math.random() * 256); data[i + 3] = 255;
+            }
+            const textBytes = new TextEncoder().encode(encryptedText); const textLength = textBytes.length;
+            if (data.length < 16) throw new Error("Canvas demasiado pequeño para metadatos.");
+            data[2]  = (textLength >> 24) & 0xFF; data[6]  = (textLength >> 16) & 0xFF; data[10] = (textLength >> 8)  & 0xFF; data[14] = textLength & 0xFF;
+            for (let i = 0; i < textLength; i++) {
+                const pixelIndex = i + 4; const dataIndex = pixelIndex * 4 + 2; // Canal azul
+                if (dataIndex >= data.length) { console.error("Error: Índice de datos fuera de límites al escribir."); break; }
+                data[dataIndex] = textBytes[i];
+            }
+            ctx.putImageData(imageData, 0, 0);
+            generatedNoiseImageDataUrl = canvas.toDataURL('image/png');
+        }
+        function downloadNoiseImage() {
+             if (generatedNoiseImageDataUrl) {
+                 const link = document.createElement('a'); link.download = 'secret-noise.png';
+                 link.href = generatedNoiseImageDataUrl; link.click();
+             } else { alert("Primero genera la imagen de ruido encriptando un mensaje."); }
+        }
+        async function decryptFromImage() { // Desencriptar desde Imagen Ruido
+            const fileInput = document.getElementById('imageInput'); // Usa el input para imagen de ruido
+            fileInput.value = ''; fileInput.click();
+            fileInput.onchange = (e) => {
+                const file = e.target.files[0]; if (!file) return;
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    const img = new Image();
+                    img.onload = () => {
+                        const canvas = document.createElement('canvas'); canvas.width = img.naturalWidth; canvas.height = img.naturalHeight;
+                        const ctx = canvas.getContext('2d', { willReadFrequently: true }); ctx.drawImage(img, 0, 0);
+                        try {
+                            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height); const data = imageData.data;
+                            if (data.length < 16) throw new Error("Imagen ruido muy pequeña para metadatos.");
+                            const length = (data[2] << 24) | (data[6] << 16) | (data[10] << 8) | data[14]; // Lee longitud
+                            const maxPossibleLength = (canvas.width * canvas.height) - 4;
+                             if (length < 0 || length > maxPossibleLength) throw new Error(`Longitud inválida (${length}) en imagen ruido. Máx: ${maxPossibleLength}.`);
+                            const bytes = [];
+                            for (let i = 0; i < length; i++) { // Extrae bytes
+                                const pixelIndex = i + 4; const dataIndex = pixelIndex * 4 + 2;
+                                if (dataIndex >= data.length) throw new Error("Inconsistencia en imagen ruido: Longitud excede datos.");
+                                bytes.push(data[dataIndex]);
+                            }
+                            const encrypted = new TextDecoder().decode(new Uint8Array(bytes)); // Reconstruye texto encriptado
+                            const key = document.getElementById('key').value; if (!key) { alert("Introduce la clave."); return; }
+                            const decryptedText = compressDecrypt(encrypted, key); // Desencripta
+                            document.getElementById('output').value = decryptedText;
+                        } catch (err) {
+                            console.error("Error procesando imagen ruido:", err);
+                            document.getElementById('output').value = "Error procesando imagen ruido: " + err.message;
+                        }
+                    };
+                    img.onerror = () => { document.getElementById('output').value = "Error: No se pudo cargar imagen ruido."; };
+                    img.src = event.target.result;
+                };
+                reader.onerror = () => { document.getElementById('output').value = "Error al leer archivo imagen ruido."; };
+                reader.readAsDataURL(file);
+            };
+        }
+
+        // --- *** NUEVA FUNCIÓN PARA DESENCRIPTAR DESDE IMAGEN QR *** ---
+        async function decryptFromQRImage() {
+            const fileInput = document.getElementById('qrImageInput'); // Usa el NUEVO input para imagen QR
+            fileInput.value = ''; // Resetear
+            fileInput.click(); // Abrir diálogo
+
+            fileInput.onchange = (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    const img = new Image();
+                    img.onload = () => {
+                        // Crear canvas para que jsQR pueda leer la imagen
+                        const canvas = document.createElement('canvas');
+                        const ctx = canvas.getContext('2d');
+                        canvas.width = img.naturalWidth;
+                        canvas.height = img.naturalHeight;
+                        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+                        try {
+                            // Obtener ImageData del canvas
+                            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+
+                            // Usar jsQR para intentar leer el código QR
+                            // Nota: jsQR podría necesitar ajustes si los QR no son estándar (ej. invertidos)
+                            const code = jsQR(imageData.data, imageData.width, imageData.height, {
+                                inversionAttempts: "dontInvert", // Asume QR estándar (oscuro sobre claro)
+                            });
+
+                            if (code && code.data) {
+                                // ¡Éxito! code.data contiene el texto del QR (que es nuestro texto encriptado)
+                                const encryptedText = code.data;
+                                console.log("Texto extraído del QR:", encryptedText.substring(0,100) + "...");
+
+                                // Obtener la clave
+                                const key = document.getElementById('key').value;
+                                if (!key) {
+                                    alert("Por favor, introduce la palabra clave para desencriptar.");
+                                    return;
+                                }
+
+                                // Usar la MISMA función de desencriptación que antes
+                                const decryptedText = compressDecrypt(encryptedText, key);
+                                document.getElementById('output').value = decryptedText;
+
+                            } else {
+                                // jsQR no encontró o no pudo decodificar un QR
+                                document.getElementById('output').value = "Error: No se pudo decodificar código QR en la imagen.";
+                                alert("No se pudo encontrar o decodificar un código QR en la imagen seleccionada. Asegúrate que la imagen sea clara y contenga un solo QR estándar.");
+                            }
+                        } catch (err) {
+                            // Error durante el procesamiento con jsQR u otro paso
+                            console.error("Error al procesar imagen QR:", err);
+                            document.getElementById('output').value = "Error procesando imagen QR: " + err.message;
+                        }
+                    }; // Fin img.onload
+
+                    img.onerror = () => {
+                        document.getElementById('output').value = "Error: No se pudo cargar el archivo como imagen válida (QR).";
+                    };
+                    img.src = event.target.result; // Cargar la imagen QR subida
+
+                }; // Fin reader.onload
+
+                reader.onerror = () => {
+                    document.getElementById('output').value = "Error al leer el archivo de imagen QR.";
+                };
+                reader.readAsDataURL(file); // Leer archivo como DataURL
+            }; // Fin fileInput.onchange
+        } // Fin decryptFromQRImage
+
+        // --- Funciones Principales (encrypt/decrypt de texto) ---
+        function encrypt() {
+            const input = document.getElementById('input').value; const key = document.getElementById('key').value;
+            const outputArea = document.getElementById('output'); const qrContainer = document.getElementById('qrcode');
+            const noiseCanvas = document.getElementById('noiseCanvas');
+            outputArea.value = ''; qrContainer.innerHTML = ''; generatedNoiseImageDataUrl = null;
+            noiseCanvas.width = 0; noiseCanvas.height = 0; noiseCanvas.style.border = 'none'; // Resetear canvas visualmente
+             // Resetear estilos QR por si había mensaje de error
+             qrContainer.style.backgroundColor = 'rgba(0, 0, 0, 0.716)';
+             qrContainer.style.padding = '50px';
+
+            if (!input && input !== "") { alert("¡Se requiere el mensaje!"); return; }
+            if (!key) { alert("¡La palabra clave es requerida!"); return; }
+            try {
+                const encrypted = compressEncrypt(input, key); outputArea.value = encrypted;
+                generateQR(encrypted); // Generar QR (con chequeo interno)
+                const textBytes = new TextEncoder().encode(encrypted); const textLength = textBytes.length;
+                const pixelsNeeded = textLength + 4;
+                 if (pixelsNeeded <= 4) { // Manejar caso de texto original vacío (encriptado puede tener salt)
+                      if (textLength > 0) { // Si hay texto encriptado (solo salt ofuscado)
+                          let side = Math.ceil(Math.sqrt(pixelsNeeded));
+                          if (side > MAX_CANVAS_SIDE) throw new Error(`Canvas requerido (${side}x${side}) excede límite.`);
+                          generateNoiseImage(encrypted, side, side);
+                      } else { // Si el texto encriptado también es vacío (no debería pasar con salt)
+                          console.warn("Texto encriptado vacío, no se genera imagen de ruido.");
+                          noiseCanvas.width = 0; noiseCanvas.height = 0; noiseCanvas.style.border = 'none';
+                      }
+                 } else { // pixelsNeeded > 4
+                     let side = Math.ceil(Math.sqrt(pixelsNeeded));
+                     if (side > MAX_CANVAS_SIDE) throw new Error(`Mensaje demasiado largo. Canvas requerido (${side}x${side}) excede límite.`);
+                     generateNoiseImage(encrypted, side, side);
+                 }
+            } catch(err) {
+                console.error("Error en encrypt:", err); alert("Error en encriptación: " + err.message); outputArea.value = "Error: " + err.message;
+            }
+        }
+        function decrypt() {
+            const encrypted = document.getElementById('output').value; const key = document.getElementById('key').value;
+             // Permitir desencriptar cadena vacía si hay una clave (podría ser resultado de desencriptar mensaje vacío)
+            if (!encrypted && encrypted !== "") { alert("¡Se necesita el texto encriptado!"); return; }
+            if (!key) { alert("¡La palabra clave es requerida!"); return; }
+            const decryptedText = compressDecrypt(encrypted, key); document.getElementById('output').value = decryptedText;
+        }
+    </script>
+</body>
+</html>
+Vr 0.1    
+<br>
+Copyright © 2025 Roberth. Todos los derechos reservados.
